@@ -1,0 +1,23 @@
+[
+  {
+    "name": "unicode-and-whitespace",
+    "values": {"first_name":"  דנה  ","last_name":" Example   Person ","email":"User@example.org","email_confirmation":"user@EXAMPLE.org","source":"contact","website":""},
+    "expected": {"ok":true,"spam":false,"errors":[],"data":{"firstName":"דנה","lastName":"Example Person","email":"User@example.org","source":"contact"}}
+  },
+  {
+    "name":"confirmation-mismatch",
+    "values":{"first_name":"Dana","last_name":"Person","email":"user@example.org","email_confirmation":"other@example.org","source":"contact","website":""},
+    "expected":{"ok":false,"spam":false,"errors":[{"field":"email_confirmation","code":"mismatch","message":"The email addresses do not match."}],"data":{"firstName":"Dana","lastName":"Person","email":"user@example.org","source":"contact"}}
+  },
+  {
+    "name":"honeypot",
+    "values":{"first_name":"Dana","last_name":"Person","email":"user@example.org","email_confirmation":"user@example.org","source":"contact","website":" https://bot.example "},
+    "expected":{"ok":true,"spam":true,"errors":[],"data":{"firstName":"Dana","lastName":"Person","email":"user@example.org","source":"contact"}}
+  },
+  {
+    "name":"configured-source-denial",
+    "options":{"allowedSources":["contact"]},
+    "values":{"first_name":"Dana","last_name":"Person","email":"user@example.org","email_confirmation":"user@example.org","source":"spoofed","website":""},
+    "expected":{"ok":false,"spam":false,"errors":[{"field":"source","code":"invalid","message":"The form source is invalid."}],"data":{"firstName":"Dana","lastName":"Person","email":"user@example.org","source":"spoofed"}}
+  }
+]

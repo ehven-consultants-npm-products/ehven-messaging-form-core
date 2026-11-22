@@ -1,0 +1,21 @@
+{
+  "name": "@ehven/messaging-form-core",
+  "version": "0.1.0-dev.0",
+  "private": true,
+  "type": "module",
+  "license": "UNLICENSED",
+  "description": "Portable validation, browser enhancement and request processing for custom messaging forms.",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./browser": "./src/browser/index.mjs",
+    "./server": "./src/server/index.mjs"
+  },
+  "files": ["src", "README.md"],
+  "sideEffects": false,
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "check": "node --test test/*.test.mjs"
+  },
+  "repository": { "type": "git", "url": "git+https://github.com/ehven-consultants-npm-products/ehven-messaging-form-core.git" }
+}
