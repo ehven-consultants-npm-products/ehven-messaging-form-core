@@ -2,7 +2,7 @@
 
 Portable JavaScript validation, browser enhancement and HTTP processing for custom messaging forms.
 
-Development candidate `0.1.0-dev.0`. Not published. Node 24 unit tests are available; browser, Cloudflare runtime and production integration acceptance are pending. The package currently blocks npm publication. License selection is pending.
+Development candidate `0.1.0-dev.0`. Not published. Node 24 unit tests are available; browser, Cloudflare runtime and production integration acceptance are pending. The package currently blocks npm publication. Licensed under MIT; see LICENSE.
 
 ## Boundaries
 
