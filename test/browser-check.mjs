@@ -60,7 +60,8 @@ try {
   for (let i=0;i<100;i++) { if(await evaluate('document.readyState === "complete" && Boolean(document.getElementById("one"))'))break; await new Promise(done=>setTimeout(done,20)); }
   const checks = await evaluate(`(async () => {
     const {enhanceMessagingForm,revealMessagingFields,restoreMessagingFields} = await import('/src/browser/index.mjs');
-    const check=(value,message)=>{if(!value)throw Error(message);};
+    let assertions=0;
+    const check=(value,message)=>{assertions++;if(!value)throw Error(message);};
     const wait=async condition=>{for(let i=0;i<400;i++){if(condition())return;await new Promise(done=>setTimeout(done,5));}throw Error('UI condition timed out');};
     const one=document.getElementById('one'),two=document.getElementById('two');
     const original=one.querySelector('em'),input=one.elements.email,status=one.querySelector('[data-form-status]');
@@ -96,7 +97,7 @@ try {
     check(!group.hidden&&!group.inert,'Interrupted reveal honors latest selection');
     restoreMessagingFields(group);check(group.hidden&&!group.inert&&group.firstChild===child,'Reveal restores original state and nodes');
     remounted.destroy();second.destroy();
-    return 16;
+    return assertions;
   })()`);
   await call('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]},sessionId);
   assert.equal(await evaluate(`(async()=>{const {revealMessagingFields}=await import('/src/browser/index.mjs');const group=document.getElementById('reveal');revealMessagingFields(group,true,{animate:true});return group.getAnimations().length;})()`),0);
