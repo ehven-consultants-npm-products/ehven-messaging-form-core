@@ -2,7 +2,7 @@
 
 Portable JavaScript validation, browser enhancement and HTTP processing for custom messaging forms.
 
-Development candidate `0.1.0-dev.0`. Not published. Node 24 unit tests are available; browser, Cloudflare runtime and production integration acceptance are pending. The package currently blocks npm publication. Licensed under MIT; see LICENSE.
+Development candidate `0.1.0-dev.0`. Not published. Node 24 unit tests and a Chromium acceptance suite are available; Cloudflare runtime and production integration acceptance are pending. See current CI for executed browser evidence. The package currently blocks npm publication. Licensed under MIT; see LICENSE.
 
 ## Boundaries
 
@@ -94,6 +94,33 @@ JSON responses include `{ok,outcome,message}` on success and `{ok:false,code,mes
 
 No automatic retry or persistent deduplication is implemented in this candidate. Rate limiting and human verification do not establish exactly-once delivery. The host must define idempotency/retry policy before production use. A provider controller should preserve accepted CRM recording when later acknowledgment email fails.
 
+## Delivery pipeline
+
+`createDeliveryPipeline()` from `/server` composes one required acceptance operation and one optional acknowledgment. It imports no provider connector, host adapter or workflow extender.
+
+```js
+import {createDeliveryPipeline} from '@ehven/messaging-form-core/server';
+
+const deliver = createDeliveryPipeline({
+  accept: async (data, context) => {
+    await recordInYourSystem(data, {signal: context.signal});
+    return {ok: true};
+  },
+  acknowledge: async (data, context) => {
+    await sendYourReceipt(data, {signal: context.signal});
+  },
+});
+// Supply deliver to handleMessagingRequest alongside validate and verifyHuman.
+```
+
+The functions in the example are host-injected implementations. Returning undefined retains throw-on-failure compatibility. Acceptance otherwise requires `{ok:true}` with optional `outcome:'accepted'` or `'simulated'`; explicit failure/malformed results reject the primary operation. A primary failure/timeout prevents acknowledgment and throws a sanitized `DeliveryPipelineError` with a stable code. A simulated primary suppresses acknowledgment. An acknowledgment can return `{ok:true,outcome:'skipped'}` when intentionally omitted.
+
+A receipt failure/timeout preserves `{ok:true,outcome:'accepted'}` and returns `acknowledgment:{status:'failed',code}`. Other receipt statuses are `sent` and `skipped`; `sent` means the injected operation completed, not proof of mailbox arrival. An optional `onDiagnostic` receives only correlationId/phase/code; diagnostic failure cannot invalidate delivery. Provider result objects are passed only to the injected acknowledgment as `primaryResult`, never automatically to the HTTP response or logs.
+
+`timeoutMs` bounds the primary operation (15000 default); `acknowledgmentTimeoutMs` bounds the receipt (5000 default). Both receive cancellation signals. The HTTP processor supplies `context.markAccepted(outcome)`, called by the pipeline immediately after primary acceptance. Consequently an outer HTTP deadline during the receipt returns acceptance instead of inviting primary resubmission. Custom delivery functions may use this hook only after confirmed irreversible acceptance; the first accepted outcome wins. Late completion after an unconfirmed primary timeout cannot recall a response already sent.
+
+This is a two-operation helper, not a durable queue or exactly-once engine. Secret lookup, receipt templates, required-before-start configuration checks and provider selection belong to injected operations/configuration. Native PHP implementations must reproduce the same failure contract independently.
+
 ## Host integration
 
 Astro components can render the documented HTML and initialize the browser controller. No `.astro` component ships in core. A WordPress theme/plugin can render the same markup and select an external JavaScript endpoint or a native PHP handler implementing protocol version 1. PHP cannot execute the JavaScript server entrypoint. JavaScript/PHP behavior must be compared with shared contract fixtures before claiming parity. Webflow/HubSpot custom forms require their own initialization and submission-ownership checks.
@@ -102,4 +129,4 @@ Use consumer-owned `config/packages/npm/messaging-form-core/index.json` for decl
 
 Removal: destroy each browser controller; restore reveal groups; remove host script imports, markup and routes as appropriate. The core creates no persistent records to delete. Removing it does not erase existing provider records, so follow the application's retention/deletion procedure.
 
-This candidate is verified only by the recorded Node unit checks. Browser layout/accessibility, multi-browser behavior, Cloudflare runtime operation, Astro migration and WordPress processing are still acceptance work. No platform adapter, hosted endpoint or public support SLA is supplied by this package version.
+`npm run check` verifies contracts and a fresh packed consumer. `npm run check:browser` uses an installed Chromium executable (set CHROMIUM_EXECUTABLE if needed) and exercises synthetic plain-HTML DOM, focus, recovery, reveal, reduced-motion and native-submit behavior. Hosted CI runs both and requires both to pass. This does not certify full accessibility, other browsers, Cloudflare runtime operation, Astro migration or WordPress processing. No platform adapter, hosted endpoint or public support SLA is supplied by this package version.

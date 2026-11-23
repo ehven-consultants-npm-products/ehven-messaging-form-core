@@ -1,22 +1,9 @@
+import { OperationFailure as RequestFailure, withDeadline as deadline } from './execution.mjs';
+
 const defaultFields = ['first_name', 'last_name', 'email', 'email_confirmation', 'source', 'website'];
 const mediaTypes = new Set(['application/x-www-form-urlencoded', 'multipart/form-data']);
 const noStore = { 'Cache-Control': 'no-store' };
 const safePath = path => typeof path === 'string' && /^\/(?!\/)/.test(path) && !/[\u0000-\u0020\\\u007f]/.test(path);
-class RequestFailure extends Error { constructor(status, code) { super(code); this.status = status; this.code = code; } }
-
-async function deadline(task, milliseconds, signal) {
-  const controller = new AbortController();
-  let timer, rejectAbort;
-  const abort = () => { controller.abort(); rejectAbort?.(new RequestFailure(408, 'request_aborted')); };
-  const stop = new Promise((_, reject) => {
-    rejectAbort = reject;
-    timer = setTimeout(() => { controller.abort(); reject(new RequestFailure(504, 'operation_timeout')); }, milliseconds);
-    signal?.addEventListener('abort', abort, { once: true });
-    if (signal?.aborted) abort();
-  });
-  try { return await Promise.race([Promise.resolve().then(() => { if (controller.signal.aborted) throw new RequestFailure(408, 'request_aborted'); return task(controller.signal); }), stop]); }
-  finally { clearTimeout(timer); signal?.removeEventListener('abort', abort); }
-}
 
 /** Read only up to the configured bound, cancelling the stream on rejection. */
 export async function readBoundedFormData(request, { maxRequestBytes = 32768, maxFields = 64, timeoutMs = 15000 } = {}) {
@@ -113,10 +100,16 @@ export async function handleMessagingRequest(request, env, options = {}) {
   if (!human || typeof human.ok !== 'boolean') return failure(503, 'verification_unavailable', copy.unavailable);
   if (!human.ok) return failure(422, 'verification_failed', copy.verification, [{ field: verificationField, code: 'verification_failed', message: copy.verification }]);
   if (typeof deliver !== 'function') return failure(503, 'delivery_unavailable', copy.unavailable, [], { 'Retry-After': '3600' });
+  let acceptedOutcome, deliveryActive = true;
+  const markAccepted = outcome => {
+    if (!['accepted', 'simulated'].includes(outcome)) throw new TypeError('Invalid acceptance outcome.');
+    if (deliveryActive && acceptedOutcome === undefined) acceptedOutcome = outcome;
+  };
   try {
-    const result = await deadline(signal => deliver(validation.data, { request, env, formData, signal }), timeoutMs, request.signal);
+    const result = await deadline(signal => deliver(validation.data, { request, env, formData, signal, markAccepted }), timeoutMs, request.signal);
     // Undefined retains compatibility with existing throw-on-failure delivery callbacks.
     if (result !== undefined && (!result || result.ok !== true || result.outcome !== undefined && !['accepted', 'simulated'].includes(result.outcome))) throw new TypeError('Delivery failed.');
-    return success(validation.data, result?.outcome ?? 'accepted');
-  } catch { return failure(502, 'delivery_unconfirmed', copy.delivery); }
+    return success(validation.data, acceptedOutcome ?? result?.outcome ?? 'accepted');
+  } catch { return acceptedOutcome ? success(validation.data, acceptedOutcome) : failure(502, 'delivery_unconfirmed', copy.delivery); }
+  finally { deliveryActive = false; }
 }

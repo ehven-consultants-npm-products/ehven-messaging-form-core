@@ -15,7 +15,8 @@
   "engines": { "node": ">=24" },
   "scripts": {
     "test": "node --test test/*.test.mjs",
-    "check": "node --test test/*.test.mjs"
+    "check": "node --test test/*.test.mjs",
+    "check:browser": "node test/browser-check.mjs"
   },
   "repository": { "type": "git", "url": "git+https://github.com/ehven-consultants-npm-products/ehven-messaging-form-core.git" }
 }

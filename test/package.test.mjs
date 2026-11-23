@@ -15,11 +15,11 @@ test('the packed artifact installs offline and exposes independent root/browser/
     execFileSync('npm', ['install', '--ignore-scripts', '--offline', '--no-audit', '--no-fund', join(temporary, pack.filename)], { cwd: consumer, stdio: 'pipe' });
     writeFileSync(join(consumer, 'smoke.mjs'), `import assert from 'node:assert/strict';
 import {createIdentityValidator,MESSAGING_PROTOCOL_VERSION} from '@ehven/messaging-form-core';
-import {handleMessagingRequest} from '@ehven/messaging-form-core/server';
+import {handleMessagingRequest,createDeliveryPipeline} from '@ehven/messaging-form-core/server';
 import {enhanceMessagingForm,revealMessagingFields} from '@ehven/messaging-form-core/browser';
 assert.equal(MESSAGING_PROTOCOL_VERSION,1);assert.equal(typeof enhanceMessagingForm,'function');assert.equal(typeof revealMessagingFields,'function');
 const fields={first_name:'Example',last_name:'Person',email:'user@example.org',email_confirmation:'user@example.org',source:'support'};
-const response=await handleMessagingRequest(new Request('https://example.org',{method:'POST',body:new URLSearchParams(fields)}),{}, {validate:createIdentityValidator({allowedSources:['support']}),verifyHuman:async()=>({ok:true}),deliver:async()=>({ok:true,outcome:'simulated'})});
+const response=await handleMessagingRequest(new Request('https://example.org',{method:'POST',body:new URLSearchParams(fields)}),{}, {validate:createIdentityValidator({allowedSources:['support']}),verifyHuman:async()=>({ok:true}),deliver:createDeliveryPipeline({accept:async()=>({ok:true,outcome:'simulated'})})});
 assert.equal(response.status,200);assert.equal((await response.json()).outcome,'simulated');`);
     execFileSync(process.execPath, ['smoke.mjs'], { cwd: consumer, stdio: 'pipe' });
     assert.equal(pack.files.some(file => /\.astro$|^test\/|\.ehven|AGENTS|SKILL/.test(file.path)), false);
