@@ -1,7 +1,6 @@
 {
   "name": "@ehven/messaging-form-core",
-  "version": "0.1.0-dev.1",
-  "private": true,
+  "version": "0.1.0",
   "type": "module",
   "license": "MIT",
   "description": "Portable validation, browser enhancement and request processing for custom messaging forms.",
@@ -10,13 +9,38 @@
     "./browser": "./src/browser/index.mjs",
     "./server": "./src/server/index.mjs"
   },
-  "files": ["src", "README.md"],
+  "files": [
+    "src/browser/form.mjs",
+    "src/browser/index.d.mts",
+    "src/browser/index.mjs",
+    "src/browser/reveal.mjs",
+    "src/identity.mjs",
+    "src/index.d.mts",
+    "src/index.mjs",
+    "src/server/delivery.mjs",
+    "src/server/execution.mjs",
+    "src/server/index.d.mts",
+    "src/server/index.mjs",
+    "src/server/request.mjs"
+  ],
   "sideEffects": false,
-  "engines": { "node": ">=24" },
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "test": "node --test test/*.test.mjs",
     "check": "node --test test/*.test.mjs",
     "check:browser": "node test/browser-check.mjs"
   },
-  "repository": { "type": "git", "url": "git+https://github.com/ehven-consultants-npm-products/ehven-messaging-form-core.git" }
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ehven-consultants-npm-products/ehven-messaging-form-core.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "homepage": "https://github.com/ehven-consultants-npm-products/ehven-messaging-form-core#readme",
+  "bugs": {
+    "url": "https://github.com/ehven-consultants-npm-products/ehven-messaging-form-core/issues"
+  }
 }

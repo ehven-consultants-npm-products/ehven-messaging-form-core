@@ -19,6 +19,7 @@ jobs:
           package-manager-cache: false
       - run: npm ci --ignore-scripts --offline --no-audit --no-fund
       - run: npm run check
+      - run: node scripts/release.mjs prepare
   browser:
     name: Chromium form acceptance
     runs-on: ubuntu-latest

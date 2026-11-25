@@ -2,7 +2,13 @@
 
 Portable JavaScript validation, browser enhancement and HTTP processing for custom messaging forms.
 
-Development candidate `0.1.0-dev.0`. Not published. Node 24 unit tests and a Chromium acceptance suite are available; Cloudflare runtime and production integration acceptance are pending. See current CI for executed browser evidence. The package currently blocks npm publication. Licensed under MIT; see LICENSE.
+## Install
+
+```sh
+npm install @ehven/messaging-form-core
+```
+
+Node.js 24 or later. The Node and Chromium suites cover the package contract. The reference integration also exercises the server running in Cloudflare workerd with simulated providers. Live provider behavior depends on the consuming application. MIT licensed.
 
 ## Boundaries
 
@@ -86,13 +92,13 @@ export function processMessage(request, env, {verifyHuman, deliver}) {
 
 `verifyHuman({request,env,formData,signal})` returns `{ok:boolean}`. Its implementation verifies the actual provider token server-side and enforces expected hostname/action. Missing, throwing or malformed verification fails closed. The handler has no built-in Turnstile requirement or secret loader. `verificationField` defaults to `cf-turnstile-response` for compatibility; set it for other mechanisms.
 
-`deliver(data,{request,env,formData,signal})` must throw on failure or return `{ok:false}`. A successful callback returns `{ok:true,outcome:'accepted'}`. An undefined result retains compatibility with existing throw-on-failure callbacks. Simulation returns `{ok:true,outcome:'simulated'}` and must actually prevent outbound actions in the host. The core identifies simulation honestly; it cannot prevent an injected callback from performing an outbound action.
+`deliver(data,{request,env,formData,signal})` throws on failure. A successful callback returns `{ok:true,outcome:'accepted'}`. An undefined result retains compatibility with existing throw-on-failure callbacks. Simulation returns `{ok:true,outcome:'simulated'}` and must actually prevent outbound actions in the host. The core identifies simulation honestly; it cannot prevent an injected callback from performing an outbound action.
 
 Custom validators receive `(values,formData,{signal})`; add extra scalar names using `fields`. Missing/malformed validators fail closed. Known scalar duplicates, file uploads, unsupported methods/media and oversized requests are rejected. URL-encoded and multipart bodies are supported. The default read bound is 32768 bytes and 64 entries; `maxRequestBytes` and `maxFields` select bounded alternatives. Each read/validation/verification/delivery stage has `timeoutMs` (15000 default), rather than one overall deadline. Callbacks should honor the abort signal; timeout cannot undo an already completed side effect.
 
 JSON responses include `{ok,outcome,message}` on success and `{ok:false,code,message,errors}` on failure. Accepted returns 202; simulation returns 200. HTML success redirects using 303 to a safe same-origin-relative path, with `/` as fallback. HTML simulation requires its own destination or returns explicit simulation text; it never uses the real sent-state fallback. HTML errors use plain text. All responses are no-store. The handler does not expose provider errors, bodies or secrets. The host owns logging; do not log raw submissions, email addresses, verification tokens or credentials.
 
-No automatic retry or persistent deduplication is implemented in this candidate. Rate limiting and human verification do not establish exactly-once delivery. The host must define idempotency/retry policy before production use. A provider controller should preserve accepted CRM recording when later acknowledgment email fails.
+No automatic retry or persistent deduplication is implemented. Rate limiting and human verification do not establish exactly-once delivery. The host must define idempotency/retry policy before production use. A provider controller should preserve accepted CRM recording when later acknowledgment email fails.
 
 ## Delivery pipeline
 
@@ -130,3 +136,7 @@ Use consumer-owned `config/packages/npm/messaging-form-core/index.json` for decl
 Removal: destroy each browser controller; restore reveal groups; remove host script imports, markup and routes as appropriate. The core creates no persistent records to delete. Removing it does not erase existing provider records, so follow the application's retention/deletion procedure.
 
 `npm run check` verifies contracts and a fresh packed consumer. `npm run check:browser` uses an installed Chromium executable (set CHROMIUM_EXECUTABLE if needed) and exercises synthetic plain-HTML DOM, focus, recovery, reveal, reduced-motion and native-submit behavior. Hosted CI runs both and requires both to pass. This does not certify full accessibility, other browsers, Cloudflare runtime operation, Astro migration or WordPress processing. No platform adapter, hosted endpoint or public support SLA is supplied by this package version.
+
+## Support
+
+Patch releases within 0.1 are intended to be compatible. Future 0.x minor releases may change APIs. Open an issue for bugs and usage questions. For a security concern, use the contact form to request a private reporting channel and keep credentials, tokens and submissions out of the public tracker. [Issues](https://github.com/ehven-consultants-npm-products/ehven-messaging-form-core/issues) · [Contact](https://ehven.com/contact/)
