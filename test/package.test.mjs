@@ -9,7 +9,7 @@ test('the packed artifact installs offline and exposes independent root/browser/
   const root = resolve(import.meta.dirname, '..');
   const temporary = mkdtempSync(join(tmpdir(), 'messaging-package-'));
   try {
-    const [pack] = JSON.parse(execFileSync('npm', ['pack', '--ignore-scripts', '--pack-destination', temporary, '--json'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
+    const [pack] = Object.values(JSON.parse(execFileSync('npm', ['pack', '--ignore-scripts', '--pack-destination', temporary, '--json'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })));
     const consumer = join(temporary, 'consumer'); mkdirSync(consumer);
     writeFileSync(join(consumer, 'package.json'), JSON.stringify({ private: true, type: 'module' }));
     execFileSync('npm', ['install', '--ignore-scripts', '--offline', '--no-audit', '--no-fund', join(temporary, pack.filename)], { cwd: consumer, stdio: 'pipe' });
